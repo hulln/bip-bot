@@ -42,39 +42,66 @@ def clean_llm_output(s: str) -> str:
 
 def run_llm():
     code = f'''
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-import torch
-mdl = "{MODEL_ID}"
-tok = AutoTokenizer.from_pretrained(mdl)
-model = AutoModelForCausalLM.from_pretrained(mdl, torch_dtype=torch.float32)
-pipe = pipeline("text-generation", model=model, tokenizer=tok, device=-1)
-prompt = "Write a short, thoughtful observation about life in 10-20 words. No quotes, no hashtags, no emojis."
-out = pipe(prompt, max_new_tokens=40, do_sample=True, temperature=0.8)[0]["generated_text"]
-# Extract only the new text after the prompt
-generated = out.replace(prompt, "").strip()
-if generated:
-    print(generated)
-else:
-    print("Technology shapes how we connect, but silence still teaches us the most.")
+import sys
+try:
+    from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+    import torch
+    
+    mdl = "{MODEL_ID}"
+    print(f"Loading model: {{mdl}}", file=sys.stderr)
+    
+    tok = AutoTokenizer.from_pretrained(mdl)
+    model = AutoModelForCausalLM.from_pretrained(mdl, torch_dtype=torch.float32)
+    pipe = pipeline("text-generation", model=model, tokenizer=tok, device=-1)
+    
+    prompt = "Write a thoughtful observation about life, technology, or human nature in 15-25 words:"
+    
+    print(f"Generating with prompt: {{prompt}}", file=sys.stderr)
+    result = pipe(prompt, max_new_tokens=50, do_sample=True, temperature=0.8, pad_token_id=tok.eos_token_id)
+    output = result[0]["generated_text"]
+    
+    # Extract only the generated part after the prompt
+    generated = output[len(prompt):].strip()
+    
+    print(f"Raw output: {{output}}", file=sys.stderr)
+    print(f"Generated part: {{generated}}", file=sys.stderr)
+    
+    if generated and len(generated.split()) >= 8:
+        print(generated)
+    else:
+        print("Every moment teaches us something new about what it means to be human.")
+        
+except Exception as e:
+    print(f"Error in LLM generation: {{e}}", file=sys.stderr)
+    print("Every moment teaches us something new about what it means to be human.")
 '''
     res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     return clean_llm_output(res.stdout)
 
 def generate_unique():
     seen = load_seen()
-    text = ""
-    for _ in range(6):
-        try: cand = run_llm()
-        except Exception: cand = fallback_generate()
-        cand = clean_llm_output(cand)
-        if not (10 <= len(cand.split()) <= 22): continue
-        h = dedupe_key(cand)
-        if h not in seen:
-            save_seen(h); return cand
-        text = cand
-    if not text: text = fallback_generate()
-    save_seen(dedupe_key(text))
-    return text
+    
+    # Try LLM generation multiple times
+    for attempt in range(8):
+        try: 
+            cand = run_llm()
+            cand = clean_llm_output(cand)
+            print(f"LLM attempt {attempt + 1}: {cand}")
+            
+            if cand and 8 <= len(cand.split()) <= 30:
+                h = dedupe_key(cand)
+                if h not in seen:
+                    save_seen(h)
+                    return cand
+        except Exception as e:
+            print(f"LLM attempt {attempt + 1} failed: {e}")
+            continue
+    
+    # Only use fallback if LLM completely fails
+    print("LLM generation failed, using fallback")
+    fallback = fallback_generate()
+    save_seen(dedupe_key(fallback))
+    return fallback
 
 def post_to_bluesky(content: str):
     from atproto import Client
