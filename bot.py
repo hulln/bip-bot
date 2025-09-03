@@ -50,7 +50,7 @@ model = AutoModelForCausalLM.from_pretrained(mdl, torch_dtype=torch.float32)
 pipe = pipeline("text-generation", model=model, tokenizer=tok, device=-1)
 SYSTEM = "Ustvari eno (1) kratko, izvirno modro misel v slovenščini. Brez emoji, brez #, brez narekovajev. 10–22 besed, sodoben ton, rahlo nepričakovano."
 user = "Napiši eno misel."
-full = f"<|im_start|>system\\n{{SYSTEM}}<|im_end|>\\n<|im_start|>user\\n{{user}}<|im_end|>\\n<|im_start|>assistant\\n".format(SYSTEM=SYSTEM, user=user)
+full = "<|im_start|>system\\n" + SYSTEM + "<|im_end|>\\n<|im_start|>user\\n" + user + "<|im_end|>\\n<|im_start|>assistant\\n"
 out = pipe(full, max_new_tokens=60, do_sample=True, temperature=1.1, top_p=0.95, repetition_penalty=1.1)[0]["generated_text"]
 print(out.split("<|im_end|>")[0].split("<|im_start|>assistant\\n")[-1].strip())
 '''
