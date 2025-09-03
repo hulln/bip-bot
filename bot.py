@@ -41,7 +41,7 @@ def clean_llm_output(s: str) -> str:
     return s.split("\n")[0].strip()
 
 def run_llm():
-    code = f"""
+    code = f'''
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 import torch
 mdl = "{MODEL_ID}"
@@ -53,7 +53,7 @@ user = "Napiši eno misel."
 full = f"<|im_start|>system\\n{{SYSTEM}}<|im_end|>\\n<|im_start|>user\\n{{user}}<|im_end|>\\n<|im_start|>assistant\\n"
 out = pipe(full, max_new_tokens=60, do_sample=True, temperature=1.1, top_p=0.95, repetition_penalty=1.1)[0]["generated_text"]
 print(out.split("<|im_end|>")[0].split("<|im_start|>assistant\\n")[-1].strip())
-"""
+'''
     res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     return clean_llm_output(res.stdout)
 
