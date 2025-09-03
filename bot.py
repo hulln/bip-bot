@@ -31,7 +31,7 @@ def run_llm():
         payload = {
             "model": "mixtral-8x7b-32768",
             "messages": [
-                {"role": "user", "content": "Write a brief, thoughtful observation about life, human nature, society, relationships, or any aspect of existence in 15-20 words:"}
+                {"role": "user", "content": "Napiši kratko, premišljeno opazovanje o življenju, človeški naravi, družbi, odnosih ali kateremkoli vidiku obstoja v slovenščini. 15-20 besed:"}
             ],
             "max_tokens": 50,
             "temperature": 0.8
@@ -46,41 +46,9 @@ def run_llm():
                 print(f"Groq generated: {content}")
                 return content
         
-        # Fallback to a simple local generation approach
-        import random
-        
-        # Generate using simple templates with randomization - DIVERSE TOPICS
-        subjects = [
-            "Love", "Friendship", "Time", "Memory", "Dreams", "Fear", "Hope", "Loneliness", 
-            "Laughter", "Silence", "Rain", "Music", "Books", "Art", "Nature", "Cities",
-            "Children", "Parents", "Strangers", "Stories", "Secrets", "Trust", "Change",
-            "Morning", "Night", "Seasons", "Travel", "Home", "Work", "Rest", "Learning",
-            "Mistakes", "Success", "Failure", "Growth", "Patience", "Kindness", "Anger"
-        ]
-        
-        verbs = [
-            "teaches us", "reminds us", "shows us", "reveals", "whispers", "demands",
-            "offers", "hides", "transforms", "carries", "builds", "breaks", "heals",
-            "connects", "separates", "creates", "destroys", "nurtures", "challenges"
-        ]
-        
-        insights = [
-            "what we truly value", "who we really are", "the beauty in small moments",
-            "that everything passes", "the power of presence", "how fragile we are",
-            "how strong we can be", "that we're all connected", "the importance of now",
-            "that less is often more", "how much we need each other", "the magic in ordinary days",
-            "that courage isn't fearlessness", "how precious simplicity is", "the weight of words",
-            "that vulnerability is strength", "how healing comes slowly", "the joy in giving",
-            "that everyone has a story", "how beautiful imperfection is"
-        ]
-        
-        subject = random.choice(subjects)
-        verb = random.choice(verbs)
-        insight = random.choice(insights)
-        
-        generated = f"{subject} {verb} {insight}."
-        print(f"Locally generated: {generated}")
-        return generated
+        # NO FALLBACK - RETURN NONE
+        print("Groq API failed, no fallback")
+        return None
         
     except Exception as e:
         print(f"LLM generation error: {e}")
