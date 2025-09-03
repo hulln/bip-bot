@@ -88,19 +88,19 @@ def run_llm():
                 print(f"Model {model} failed: {e}")
                 continue
         
-        # If all models fail, return a simple fallback
-        print("All LLM models failed, using simple fallback")
-        return "Technology connects us all, yet somehow we feel more alone than ever."
+        # If all models fail, return None - no fallback
+        print("All LLM models failed, no fallback")
+        return None
         
     except Exception as e:
         print(f"LLM generation error: {e}")
-        return "Technology connects us all, yet somehow we feel more alone than ever."
+        return None
 
 def generate_unique():
     seen = load_seen()
     
-    # Try LLM generation multiple times
-    for attempt in range(5):
+    # Try LLM generation multiple times - NO FALLBACKS
+    for attempt in range(10):
         try:
             cand = run_llm()
             if cand and 3 <= len(cand.split()) <= 35:
@@ -115,16 +115,8 @@ def generate_unique():
             print(f"LLM attempt {attempt + 1} failed: {e}")
             continue
     
-    # If we get here, just return the last generated content even if seen
-    print("Using last generated content even if potentially duplicate")
-    if 'cand' in locals() and cand:
-        save_seen(dedupe_key(cand))
-        return cand
-    
-    # Absolute fallback
-    fallback = "Every day brings new challenges and opportunities to grow."
-    save_seen(dedupe_key(fallback))
-    return fallback
+    # If all LLM attempts fail, raise exception - DON'T POST ANYTHING
+    raise Exception("LLM generation completely failed - no post will be made")
 
 def post_to_bluesky(content: str):
     from atproto import Client
