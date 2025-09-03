@@ -23,10 +23,7 @@ jobs:
           pip install --upgrade pip
           pip install --index-url https://download.pytorch.org/whl/cpu torch==2.3.1
           pip install -r requirements.txt
-          python - <<'PY'
-from huggingface_hub import snapshot_download
-snapshot_download("Qwen/Qwen2.5-0.5B-Instruct", local_dir_use_symlinks=False)
-PY
+          python -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen2.5-0.5B-Instruct', local_dir_use_symlinks=False)"
 
       - name: Run bot
         env:
