@@ -1,0 +1,46 @@
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+name: bip-bot
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.3.1
+          pip install -r requirements.txt
+          python - <<'PY'
+from huggingface_hub import snapshot_download
+snapshot_download("Qwen/Qwen2.5-0.5B-Instruct", local_dir_use_symlinks=False)
+PY
+
+      - name: Run bot
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+          MODEL_ID: Qwen/Qwen2.5-0.5B-Instruct
+        run: python bot.py
+
+      - name: Commit seen file
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "bip-bot"
+            git config user.email "bip-bot@users.noreply.github.com"
+            git add seen_thoughts.txt
+            git commit -m "update seen"
+            git push
+          fi
