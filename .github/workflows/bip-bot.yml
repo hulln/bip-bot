@@ -1,10 +1,10 @@
 
+name: bip-bot
+
 on:
   schedule:
     - cron: "0 */6 * * *"
   workflow_dispatch:
-
-name: bip-bot
 
 permissions:
   contents: write
