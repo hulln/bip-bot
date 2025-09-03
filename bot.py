@@ -27,6 +27,21 @@ def run_llm():
         # Try multiple free LLM APIs
         apis = [
             {
+                "url": "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {HF_TOKEN}"
+                } if HF_TOKEN else {"Content-Type": "application/json"},
+                "payload": {
+                    "inputs": "Napiši kratko, premišljeno opazovanje o življenju v slovenščini (15-20 besed):",
+                    "parameters": {
+                        "max_length": 50,
+                        "temperature": 0.7,
+                        "do_sample": True
+                    }
+                }
+            },
+            {
                 "url": "https://api.openai.com/v1/chat/completions",
                 "headers": {"Content-Type": "application/json"},
                 "payload": {
