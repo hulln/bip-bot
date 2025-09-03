@@ -6,18 +6,18 @@ MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
 SEEN_FILE = "seen_thoughts.txt"
 
 FALLBACK_THEMES = [
-    ("megla", ["megla", "dolina", "tišina", "jutro", "rosna trava"]),
-    ("kava", ["skodelica", "para", "budnost", "tresljaj", "grenkoba"]),
-    ("mesto", ["avtobus", "robnik", "izložba", "semafor", "odsev"]),
-    ("reka", ["tok", "breg", "kamni", "počitek", "globina"]),
-    ("zima", ["sneg", "dih", "sled", "hlačne žepe", "mrak"]),
+    ("morning", ["coffee", "dawn", "quiet", "thoughts", "beginning"]),
+    ("city", ["streets", "windows", "strangers", "lights", "movement"]),
+    ("nature", ["trees", "wind", "shadows", "seasons", "growth"]),
+    ("time", ["moments", "memory", "change", "patience", "rhythm"]),
+    ("connection", ["words", "silence", "distance", "understanding", "presence"]),
 ]
 FALLBACK_TEMPLATES = [
-    "Včasih {w1} utihne, da {w2} lahko pove, kar {w3} skriva.",
-    "{w1} se ne mudi; {w2} prispe pravočasno, ko {w3} odneha.",
-    "Ko {w1} odpove, {w2} najde pot skozi {w3}.",
-    "{w1} je kompas, ki ga {w2} ne zna brati, a {w3} ga čuti.",
-    "Med {w1} in {w2} je prostor, v katerem {w3} dozori.",
+    "Sometimes {w1} teaches us more than {w2} ever could about {w3}.",
+    "Between {w1} and {w2}, we discover what {w3} really means.",
+    "The space where {w1} meets {w2} is where {w3} begins.",
+    "{w1} reminds us that {w2} isn't always about {w3}.",
+    "In every {w1}, there's a {w2} waiting to show us {w3}.",
 ]
 
 def fallback_generate():
@@ -48,11 +48,14 @@ mdl = "{MODEL_ID}"
 tok = AutoTokenizer.from_pretrained(mdl)
 model = AutoModelForCausalLM.from_pretrained(mdl, torch_dtype=torch.float32)
 pipe = pipeline("text-generation", model=model, tokenizer=tok, device=-1)
-SYSTEM = "Ustvari eno (1) kratko, izvirno modro misel v slovenščini. Brez emoji, brez #, brez narekovajev. 10–22 besed, sodoben ton, rahlo nepričakovano."
-user = "Napiši eno misel."
-full = "<|im_start|>system\\n" + SYSTEM + "<|im_end|>\\n<|im_start|>user\\n" + user + "<|im_end|>\\n<|im_start|>assistant\\n"
-out = pipe(full, max_new_tokens=60, do_sample=True, temperature=1.1, top_p=0.95, repetition_penalty=1.1)[0]["generated_text"]
-print(out.split("<|im_end|>")[0].split("<|im_start|>assistant\\n")[-1].strip())
+prompt = "Write a short, thoughtful observation about life in 10-20 words. No quotes, no hashtags, no emojis."
+out = pipe(prompt, max_new_tokens=40, do_sample=True, temperature=0.8)[0]["generated_text"]
+# Extract only the new text after the prompt
+generated = out.replace(prompt, "").strip()
+if generated:
+    print(generated)
+else:
+    print("Technology shapes how we connect, but silence still teaches us the most.")
 '''
     res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     return clean_llm_output(res.stdout)
