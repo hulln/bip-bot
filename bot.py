@@ -59,7 +59,7 @@ def run_llm():
                 
                 url = f"https://api-inference.huggingface.co/models/{model}"
                 
-                prompt = "Write a thoughtful observation about modern life, technology, or human nature in one sentence:"
+                prompt = "Napiši kratek, premišljen razmislek o sodobnem življenju, tehnologiji ali človeški naravi v slovenščini. En stavek:"
                 
                 response = requests.post(
                     url,
@@ -111,21 +111,21 @@ def generate_unique():
     
     # Fallback to curated content if LLM fails
     curated_thoughts = [
-        "Technology connects us instantly, yet we often feel more distant than ever.",
-        "The most profound conversations happen in the spaces between words.",
-        "We document every moment but forget to actually live them.",
-        "Social media promised connection but delivered performance anxiety.",
-        "The quietest rooms often hold the loudest thoughts.",
-        "We're all searching for authenticity in a world of filters.",
-        "Every notification is a small interruption of our inner peace.",
-        "The internet remembers everything except what actually matters.",
-        "We swipe through lives but struggle to understand our own.",
-        "Progress isn't always about moving faster; sometimes it's about slowing down.",
-        "The most important conversations are the ones we have with ourselves.",
-        "We're more connected than ever, yet loneliness is epidemic.",
-        "Every screen we look at is a mirror reflecting our desires.",
-        "The best ideas often come when we're not trying to have them.",
-        "We built tools to save time, then forgot what to do with it.",
+        "Tehnologija nas povezuje v trenutku, vendar se pogosto počutimo bolj oddaljeni kot kdaj koli prej.",
+        "Najgloblji pogovori se dogajajo v presledkih med besedami.",
+        "Dokumentiramo vsak trenutek, pozabljamo pa ga dejansko živeti.",
+        "Družbeni mediji so obljubili povezanost, prinesli pa so anksioznost nastopanja.",
+        "Najtiši prostori pogosto skrivajo najglasnejše misli.",
+        "Vsi iščemo pristnost v svetu filtrov.",
+        "Vsako obvestilo je majhna prekinitev naše notranje tišine.",
+        "Internet si zapomni vse, razen tistega, kar je resnično pomembno.",
+        "Listamo skozi življenja drugih, ne razumemo pa svojega.",
+        "Napredek ni vedno hitrejše gibanje; včasih je počasnejše.",
+        "Najpomembnejši pogovori so tisti, ki jih imamo sami s sabo.",
+        "Bolj povezani smo kot kadarkoli prej, osamljen pa je vsak.",
+        "Vsak zaslon, v katerega gledamo, je ogledalo naših želja.",
+        "Najboljše ideje pridejo, ko se ne trudimo jih imeti.",
+        "Zgradili smo orodja za varčevanje s časom, pozabili pa, kaj z njim.",
     ]
     
     for thought in curated_thoughts:
