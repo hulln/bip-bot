@@ -22,32 +22,60 @@ def clean_llm_output(s: str) -> str:
 
 def run_llm():
     try:
-        # Try Groq first (free and fast)
         import requests
         
-        groq_url = "https://api.groq.com/openai/v1/chat/completions"
+        # Try multiple free LLM APIs
+        apis = [
+            {
+                "url": "https://api.openai.com/v1/chat/completions",
+                "headers": {"Content-Type": "application/json"},
+                "payload": {
+                    "model": "gpt-3.5-turbo", 
+                    "messages": [{"role": "user", "content": "Napiši kratko, premišljeno opazovanje o življenju v slovenščini (15-20 besed):"}],
+                    "max_tokens": 50
+                }
+            },
+            {
+                "url": "https://api.together.xyz/inference", 
+                "headers": {"Content-Type": "application/json"},
+                "payload": {
+                    "model": "togethercomputer/llama-2-7b-chat",
+                    "prompt": "Write a thoughtful observation about life in Slovenian (15-20 words):",
+                    "max_tokens": 50,
+                    "temperature": 0.7
+                }
+            }
+        ]
         
-        # Try without API key first (some endpoints are free)
-        payload = {
-            "model": "mixtral-8x7b-32768",
-            "messages": [
-                {"role": "user", "content": "Napiši kratko, premišljeno opazovanje o življenju, človeški naravi, družbi, odnosih ali kateremkoli vidiku obstoja v slovenščini. 15-20 besed:"}
-            ],
-            "max_tokens": 50,
-            "temperature": 0.8
-        }
+        for api in apis:
+            try:
+                response = requests.post(api["url"], headers=api["headers"], json=api["payload"], timeout=30)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    # Handle different response formats
+                    content = None
+                    if "choices" in result and result["choices"]:
+                        if "message" in result["choices"][0]:
+                            content = result["choices"][0]["message"]["content"]
+                        elif "text" in result["choices"][0]:
+                            content = result["choices"][0]["text"]
+                    elif "output" in result:
+                        content = result["output"]["choices"][0]["text"]
+                    
+                    if content and content.strip():
+                        content = content.strip()
+                        if 5 <= len(content.split()) <= 30:
+                            print(f"API generated: {content}")
+                            return content
+                            
+            except Exception as e:
+                print(f"API failed: {e}")
+                continue
         
-        response = requests.post(groq_url, json=payload, timeout=30)
-        
-        if response.status_code == 200:
-            result = response.json()
-            content = result.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-            if content and 5 <= len(content.split()) <= 25:
-                print(f"Groq generated: {content}")
-                return content
-        
-        # NO FALLBACK - RETURN NONE
-        print("Groq API failed, no fallback")
+        # If all APIs fail, return None - NO FALLBACK
+        print("All LLM APIs failed, no fallback")
         return None
         
     except Exception as e:
