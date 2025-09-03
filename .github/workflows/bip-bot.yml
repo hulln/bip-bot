@@ -23,15 +23,13 @@ jobs:
       - name: Install deps
         run: |
           pip install --upgrade pip
-          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.3.1
           pip install -r requirements.txt
-          python -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen2.5-0.5B-Instruct', local_dir_use_symlinks=False)"
 
       - name: Run bot
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
-          MODEL_ID: Qwen/Qwen2.5-0.5B-Instruct
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python bot.py
 
       - name: Commit seen file

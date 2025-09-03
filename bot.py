@@ -2,7 +2,7 @@ import os, hashlib, random, subprocess, sys, re, pathlib
 
 HANDLE = os.environ["BSKY_HANDLE"]
 APP_PASSWORD = os.environ["BSKY_APP_PASSWORD"]
-MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
+HF_TOKEN = os.environ.get("HF_TOKEN")  # Optional Hugging Face token for higher rate limits
 SEEN_FILE = "seen_thoughts.txt"
 
 FALLBACK_THEMES = [
@@ -41,54 +41,66 @@ def clean_llm_output(s: str) -> str:
     return s.split("\n")[0].strip()
 
 def run_llm():
-    code = f'''
-import sys
-try:
-    from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-    import torch
-    
-    mdl = "{MODEL_ID}"
-    print(f"Loading model: {{mdl}}", file=sys.stderr)
-    
-    tok = AutoTokenizer.from_pretrained(mdl)
-    model = AutoModelForCausalLM.from_pretrained(mdl, torch_dtype=torch.float32)
-    pipe = pipeline("text-generation", model=model, tokenizer=tok, device=-1)
-    
-    prompt = "Write a thoughtful observation about life, technology, or human nature in 15-25 words:"
-    
-    print(f"Generating with prompt: {{prompt}}", file=sys.stderr)
-    result = pipe(prompt, max_new_tokens=50, do_sample=True, temperature=0.8, pad_token_id=tok.eos_token_id)
-    output = result[0]["generated_text"]
-    
-    # Extract only the generated part after the prompt
-    generated = output[len(prompt):].strip()
-    
-    print(f"Raw output: {{output}}", file=sys.stderr)
-    print(f"Generated part: {{generated}}", file=sys.stderr)
-    
-    if generated and len(generated.split()) >= 8:
-        print(generated)
-    else:
-        print("Every moment teaches us something new about what it means to be human.")
+    try:
+        import requests
         
-except Exception as e:
-    print(f"Error in LLM generation: {{e}}", file=sys.stderr)
-    print("Every moment teaches us something new about what it means to be human.")
-'''
-    res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
-    return clean_llm_output(res.stdout)
+        # Use Hugging Face's free Inference API
+        models = [
+            "microsoft/DialoGPT-medium",
+            "EleutherAI/gpt-neo-125m",
+            "distilgpt2"
+        ]
+        
+        for model in models:
+            try:
+                headers = {}
+                if HF_TOKEN:
+                    headers["Authorization"] = f"Bearer {HF_TOKEN}"
+                
+                url = f"https://api-inference.huggingface.co/models/{model}"
+                
+                prompt = "Write a thoughtful observation about modern life, technology, or human nature in one sentence:"
+                
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json={"inputs": prompt, "parameters": {"max_new_tokens": 40, "temperature": 0.7}},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if isinstance(result, list) and len(result) > 0:
+                        generated = result[0].get("generated_text", "")
+                        # Extract only the new part after the prompt
+                        if generated.startswith(prompt):
+                            generated = generated[len(prompt):].strip()
+                        
+                        # Clean up the output
+                        generated = generated.split('.')[0] + '.'  # Take only first sentence
+                        generated = re.sub(r'^[^A-Za-z]*', '', generated)  # Remove leading non-letters
+                        
+                        if generated and 8 <= len(generated.split()) <= 25:
+                            return generated
+                            
+            except Exception as e:
+                print(f"Model {model} failed: {e}")
+                continue
+        
+        return None
+        
+    except Exception as e:
+        print(f"LLM generation error: {e}")
+        return None
 
 def generate_unique():
     seen = load_seen()
     
-    # Try LLM generation multiple times
-    for attempt in range(8):
-        try: 
+    # Try LLM generation first
+    for attempt in range(3):
+        try:
             cand = run_llm()
-            cand = clean_llm_output(cand)
-            print(f"LLM attempt {attempt + 1}: {cand}")
-            
-            if cand and 8 <= len(cand.split()) <= 30:
+            if cand and 10 <= len(cand.split()) <= 30:
                 h = dedupe_key(cand)
                 if h not in seen:
                     save_seen(h)
@@ -97,11 +109,35 @@ def generate_unique():
             print(f"LLM attempt {attempt + 1} failed: {e}")
             continue
     
-    # Only use fallback if LLM completely fails
-    print("LLM generation failed, using fallback")
-    fallback = fallback_generate()
-    save_seen(dedupe_key(fallback))
-    return fallback
+    # Fallback to curated content if LLM fails
+    curated_thoughts = [
+        "Technology connects us instantly, yet we often feel more distant than ever.",
+        "The most profound conversations happen in the spaces between words.",
+        "We document every moment but forget to actually live them.",
+        "Social media promised connection but delivered performance anxiety.",
+        "The quietest rooms often hold the loudest thoughts.",
+        "We're all searching for authenticity in a world of filters.",
+        "Every notification is a small interruption of our inner peace.",
+        "The internet remembers everything except what actually matters.",
+        "We swipe through lives but struggle to understand our own.",
+        "Progress isn't always about moving faster; sometimes it's about slowing down.",
+        "The most important conversations are the ones we have with ourselves.",
+        "We're more connected than ever, yet loneliness is epidemic.",
+        "Every screen we look at is a mirror reflecting our desires.",
+        "The best ideas often come when we're not trying to have them.",
+        "We built tools to save time, then forgot what to do with it.",
+    ]
+    
+    for thought in curated_thoughts:
+        h = dedupe_key(thought)
+        if h not in seen:
+            save_seen(h)
+            return thought
+    
+    # If all thoughts used, pick random one
+    thought = random.choice(curated_thoughts)
+    save_seen(dedupe_key(thought))
+    return thought
 
 def post_to_bluesky(content: str):
     from atproto import Client
